@@ -70,7 +70,7 @@ A full-stack platform for aggregating and analyzing marketing data from multiple
    python main.py
    ```
    
-   The API will be available at `http://localhost:5000`
+   The API will be available at `http://localhost:8000`
 
 ### Frontend Setup
 
@@ -86,6 +86,20 @@ A full-stack platform for aggregating and analyzing marketing data from multiple
    
    The frontend will be available at `http://localhost:5173`
 
+### Using the Development Script
+
+For convenience, you can use the provided development script to run both the backend and frontend simultaneously:
+
+```bash
+./run_dev.sh
+```
+
+This script:
+- Starts the Flask backend on port 8000
+- Starts the Vite frontend on port 5173
+- Handles CORS configuration automatically
+- Provides real-time logs from both services
+
 ## 🐳 Docker Deployment (Recommended)
 
 The application is containerized with Docker for easy deployment to any container platform.
@@ -100,7 +114,7 @@ The application is containerized with Docker for easy deployment to any containe
    This will:
    - Build the application container
    - Start a PostgreSQL database
-   - Run the full stack on `http://localhost:5000`
+   - Run the full stack on `http://localhost:8000`
 
 2. **Stop the application**
    ```bash
@@ -126,7 +140,7 @@ The application is containerized with Docker for easy deployment to any containe
    SECRET_KEY=[auto-generated]
    JWT_SECRET_KEY=[auto-generated]
    DATABASE_URL=[from PostgreSQL database]
-   PORT=5000
+   PORT=8000
    ```
 
 4. **Deploy**
@@ -183,6 +197,21 @@ The Docker image can be deployed to:
 - **GET** `/api/v1/projects/{id}` - Get project details
 - **PUT** `/api/v1/projects/{id}` - Update project
 - **DELETE** `/api/v1/projects/{id}` - Delete project
+- **GET** `/api/v1/projects/{id}/export` - Export project data (JSON/CSV)
+
+### Data Sources
+- **GET** `/api/v1/projects/{id}/data-sources` - List project data sources
+- **POST** `/api/v1/projects/{id}/data-sources` - Add data source to project
+- **GET** `/api/v1/projects/{id}/data-sources/{source_id}` - Get data source details
+- **PUT** `/api/v1/projects/{id}/data-sources/{source_id}` - Update data source
+- **DELETE** `/api/v1/projects/{id}/data-sources/{source_id}` - Delete data source
+
+### Credentials
+- **GET** `/api/v1/projects/{id}/credentials` - List project credentials
+- **POST** `/api/v1/projects/{id}/credentials` - Add credentials to project
+- **GET** `/api/v1/projects/{id}/credentials/{cred_id}` - Get credential details
+- **PUT** `/api/v1/projects/{id}/credentials/{cred_id}` - Update credentials
+- **DELETE** `/api/v1/projects/{id}/credentials/{cred_id}` - Delete credentials
 
 ### Health Check
 - **GET** `/api/v1/health` - API health status
@@ -196,7 +225,7 @@ The Docker image can be deployed to:
 FLASK_ENV=development|production
 SECRET_KEY=your-secret-key
 JWT_SECRET_KEY=your-jwt-secret-key
-PORT=5000
+PORT=8000
 
 # Database
 DATABASE_URL=postgresql://user:pass@host:port/dbname
@@ -211,13 +240,13 @@ FACEBOOK_APP_ID=your-app-id
 
 ### Frontend (.env.local)
 ```env
-VITE_API_BASE_URL=https://your-backend-api.com/api/v1
-VITE_ENVIRONMENT=production
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+VITE_ENVIRONMENT=development
 ```
 
 ## 📝 Default Credentials
 
-- **Email**: `admin@marketingplatform.com`
+- **Email**: `admin@example.com`
 - **Password**: `admin123`
 
 ⚠️ **Important**: Change these credentials after first login in production!
@@ -236,7 +265,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 💡 Pro Tips
 
-- **Docker Benefits**: No CORS issues, single container, easier deployment
+- **Use run_dev.sh**: The development script handles both frontend and backend
+- **Port Configuration**: Backend runs on 8000 to avoid macOS AirPlay conflicts
 - **Environment Variables**: Never commit sensitive keys to GitHub  
 - **Database Backup**: Enable automated backups on your cloud provider
 - **Custom Domains**: All major container platforms support custom domains
@@ -248,7 +278,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Database Connection**: Verify `DATABASE_URL` format (should start with `postgresql://`)
 - **Container Not Starting**: Check environment variables and port configuration
 - **Health Check Failing**: Verify `/api/v1/health` endpoint responds correctly
-- **Frontend Not Loading**: Ensure React build completed successfully in Docker build
+- **CORS Issues**: Ensure FRONTEND_URL is properly set in backend environment
+- **Import Errors**: Check paths in React components (use @/ prefix for src/ imports)
 
 ## 🆘 Support
 
