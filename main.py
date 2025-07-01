@@ -52,18 +52,15 @@ def create_app():
     migrate = Migrate(app, db)
     jwt = JWTManager(app)
     
-    # Configure CORS for deployment
-    allowed_origins = [
-        "http://localhost:3000",
-        "http://localhost:5173", 
-        os.getenv('FRONTEND_URL', '*')
-    ]
-    
-    CORS(app, 
-         origins=allowed_origins,
-         supports_credentials=True,
-         allow_headers=['Content-Type', 'Authorization'],
-         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+    # Configure CORS - simplified for single container deployment
+    # In Docker deployment, frontend and backend are served from same origin
+    if os.getenv('FLASK_ENV') == 'development':
+        # Allow localhost origins for development
+        allowed_origins = ["http://localhost:3000", "http://localhost:5173"]
+        CORS(app, origins=allowed_origins, supports_credentials=True)
+    else:
+        # Production: No CORS needed since frontend is served by Flask
+        CORS(app, origins="*", supports_credentials=True)
     
     # JWT error handlers
     @jwt.expired_token_loader

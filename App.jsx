@@ -15,10 +15,12 @@ import SettingsPage from './components/settings/SettingsPage'
 import Layout from './components/layout/Layout'
 import LoadingSpinner from './components/ui/LoadingSpinner'
 
-// API configuration
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '/api/v1' // Use relative path for production
-  : 'http://localhost:5000/api/v1'
+// API configuration - simplified for Docker deployment
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (
+  process.env.NODE_ENV === 'production' 
+    ? '/api/v1' // Same origin in Docker container
+    : 'http://localhost:5000/api/v1' // Development
+)
 
 // Mock API responses for demo purposes
 const mockApiResponses = {

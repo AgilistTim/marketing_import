@@ -1,10 +1,9 @@
 services:
   - type: web
-    name: marketing-analytics-api
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT main:app
+    name: marketing-analytics-platform
+    env: docker
     healthCheckPath: /api/v1/health
+    plan: starter
     envVars:
       - key: FLASK_ENV
         value: production
@@ -16,8 +15,8 @@ services:
         fromDatabase:
           name: marketing-analytics-db
           property: connectionString
-      - key: FRONTEND_URL
-        value: https://marketing-analytics-frontend.vercel.app
+      - key: PORT
+        value: 5000
 
 databases:
   - name: marketing-analytics-db

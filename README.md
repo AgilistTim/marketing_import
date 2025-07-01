@@ -86,15 +86,35 @@ A full-stack platform for aggregating and analyzing marketing data from multiple
    
    The frontend will be available at `http://localhost:5173`
 
-## 🚀 Production Deployment
+## 🐳 Docker Deployment (Recommended)
 
-### Backend Deployment (Render)
+The application is containerized with Docker for easy deployment to any container platform.
+
+### Local Development with Docker
+
+1. **Build and run with Docker Compose**
+   ```bash
+   docker-compose up --build
+   ```
+   
+   This will:
+   - Build the application container
+   - Start a PostgreSQL database
+   - Run the full stack on `http://localhost:5000`
+
+2. **Stop the application**
+   ```bash
+   docker-compose down
+   ```
+
+### Production Deployment Options
+
+#### Option 1: Render (Docker) - Recommended
 
 1. **Create a new Web Service on Render**
    - Connect your GitHub repository
-   - Set environment to `Python`
-   - Build command: `pip install -r requirements.txt`
-   - Start command: `gunicorn --bind 0.0.0.0:$PORT main:app`
+   - Set environment to `Docker`
+   - Render will automatically detect the Dockerfile
 
 2. **Create a PostgreSQL database**
    - Add a new PostgreSQL database on Render
@@ -106,32 +126,49 @@ A full-stack platform for aggregating and analyzing marketing data from multiple
    SECRET_KEY=[auto-generated]
    JWT_SECRET_KEY=[auto-generated]
    DATABASE_URL=[from PostgreSQL database]
-   FRONTEND_URL=https://your-frontend.vercel.app
+   PORT=5000
    ```
 
 4. **Deploy**
    - Push changes to your main branch
-   - Render will automatically deploy
+   - Render will automatically build and deploy the Docker container
 
-### Frontend Deployment (Vercel)
+#### Option 2: Railway
 
-1. **Install Vercel CLI** (optional)
+1. **Deploy to Railway**
    ```bash
-   npm install -g vercel
+   railway login
+   railway deploy
    ```
 
-2. **Deploy to Vercel**
-   - Connect your GitHub repository to Vercel
-   - Set build command: `npm run build`
-   - Set output directory: `dist`
-
-3. **Set environment variables**
-   ```env
-   VITE_API_BASE_URL=https://your-backend.onrender.com/api/v1
+2. **Add PostgreSQL database**
+   ```bash
+   railway add postgresql
    ```
 
-4. **Update backend CORS settings**
-   Update the `FRONTEND_URL` environment variable in your Render backend to match your Vercel URL.
+3. **Set environment variables via Railway dashboard**
+
+#### Option 3: Fly.io
+
+1. **Install Fly CLI and login**
+   ```bash
+   fly auth login
+   ```
+
+2. **Initialize and deploy**
+   ```bash
+   fly launch
+   fly deploy
+   ```
+
+#### Option 4: Any Container Platform
+
+The Docker image can be deployed to:
+- Google Cloud Run
+- AWS ECS/Fargate  
+- Digital Ocean App Platform
+- Azure Container Instances
+- Heroku (Docker deployment)
 
 ## 🔐 API Documentation
 
@@ -196,6 +233,22 @@ VITE_ENVIRONMENT=production
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 💡 Pro Tips
+
+- **Docker Benefits**: No CORS issues, single container, easier deployment
+- **Environment Variables**: Never commit sensitive keys to GitHub  
+- **Database Backup**: Enable automated backups on your cloud provider
+- **Custom Domains**: All major container platforms support custom domains
+- **Local Testing**: Always test with `docker-compose up` before deploying
+
+## 🆘 Troubleshooting
+
+- **Docker Build Issues**: Check Dockerfile syntax and build logs
+- **Database Connection**: Verify `DATABASE_URL` format (should start with `postgresql://`)
+- **Container Not Starting**: Check environment variables and port configuration
+- **Health Check Failing**: Verify `/api/v1/health` endpoint responds correctly
+- **Frontend Not Loading**: Ensure React build completed successfully in Docker build
 
 ## 🆘 Support
 
