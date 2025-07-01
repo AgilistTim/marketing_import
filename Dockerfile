@@ -7,8 +7,8 @@ WORKDIR /app/frontend
 # Copy package.json and package-lock.json (if available)
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies (including dev deps for build tools like Vite)
+RUN npm install --legacy-peer-deps
 
 # Copy frontend source code
 COPY . .

@@ -9,11 +9,8 @@ from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
-# Initialize extensions
-db = SQLAlchemy()
-
-# Import models (they need to be imported after db is defined)
-from user import User
+# Import shared SQLAlchemy instance and models
+from user import db, User
 from project import Project
 from credential import Credential
 from data_source import DataSource
@@ -52,15 +49,13 @@ def create_app():
     migrate = Migrate(app, db)
     jwt = JWTManager(app)
     
-    # Configure CORS - simplified for single container deployment
-    # In Docker deployment, frontend and backend are served from same origin
-    if os.getenv('FLASK_ENV') == 'development':
-        # Allow localhost origins for development
-        allowed_origins = ["http://localhost:3000", "http://localhost:5173"]
-        CORS(app, origins=allowed_origins, supports_credentials=True)
-    else:
-        # Production: No CORS needed since frontend is served by Flask
-        CORS(app, origins="*", supports_credentials=True)
+    # Configure CORS - simplified for local development and single-container deployment
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": ["http://localhost:3000", "http://localhost:5173"]}},
+        supports_credentials=True,
+        expose_headers=["Authorization"],
+    )
     
     # JWT error handlers
     @jwt.expired_token_loader
@@ -81,6 +76,13 @@ def create_app():
         app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
     except ImportError:
         pass
+    
+    # Project routes
+    try:
+        from project_routes import project_bp
+        app.register_blueprint(project_bp)
+    except ImportError as e:
+        print(f"Project routes import error: {e}")
     
     # Health check endpoint
     @app.route('/api/v1/health')
@@ -120,12 +122,12 @@ def create_app():
             if not admin_user:
                 admin_user = User(
                     email='admin@marketingplatform.com',
+                    password='admin123',
                     first_name='Admin',
                     last_name='User',
                     role='admin',
                     is_verified=True
                 )
-                admin_user.set_password('admin123')
                 db.session.add(admin_user)
                 db.session.commit()
                 print("Created default admin user: admin@marketingplatform.com / admin123")

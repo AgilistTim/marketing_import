@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Button } from '../ui/button'
+import { Avatar, AvatarFallback } from '../ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,12 +9,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '../ui/dropdown-menu'
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
-} from '@/components/ui/sheet'
+} from '../ui/sheet'
 import {
   BarChart3,
   Menu,

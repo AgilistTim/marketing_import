@@ -4,11 +4,11 @@ import logging
 import json
 from sqlalchemy.exc import SQLAlchemyError
 
-from src.models.user import db
-from src.models.project import Project
-from src.models.credential import Credential
-from src.models.data_source import DataSource
-from src.models.extracted_data import ExtractedData
+from user import db
+from project import Project
+from credential import Credential
+from data_source import DataSource
+from extracted_data import ExtractedData
 from src.integrations.factory import IntegrationFactory
 
 logger = logging.getLogger(__name__)

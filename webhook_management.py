@@ -1,11 +1,12 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from marshmallow import Schema, fields, ValidationError
-from src.models.user import db, User
-from src.models.project import Project
-from src.models.webhook import WebhookConfig, APIAccessLog
-from src.models.data_source import DataSource
+from user import db, User
+from project import Project
+from webhook import WebhookConfig, APIAccessLog
+from data_source import DataSource
 from datetime import datetime, timezone, timedelta
+from project_routes import project_bp
 
 webhook_management_bp = Blueprint('webhook_management', __name__)
 
@@ -57,7 +58,6 @@ def get_project_webhook(project_id, webhook_id):
     return project, webhook, None, None
 
 # Add webhook management routes to the project blueprint
-from src.routes.project import project_bp
 
 @project_bp.route('/<project_id>/webhooks', methods=['GET'])
 @jwt_required()

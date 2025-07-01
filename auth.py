@@ -4,7 +4,7 @@ from flask_jwt_extended import (
     get_jwt_identity, get_jwt
 )
 from marshmallow import Schema, fields, ValidationError
-from src.models.user import db, User
+from user import db, User
 from datetime import datetime, timezone
 import re
 
