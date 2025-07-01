@@ -1,34 +1,28 @@
 import os
 import sys
-# DON'T CHANGE THIS !!!
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from datetime import datetime, timezone, timedelta
+import secrets
 
 from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
-from datetime import timedelta
-import secrets
+from flask_sqlalchemy import SQLAlchemy
 
-# Import all models to register them with SQLAlchemy
-from src.models.user import db, User
-from src.models.project import Project
-from src.models.credential import Credential
-from src.models.data_source import DataSource, ExtractionJob
-from src.models.extracted_data import ExtractedData
-from src.models.webhook import WebhookConfig, APIAccessLog
+# Initialize extensions
+db = SQLAlchemy()
 
-# Import route blueprints
-from src.routes.user import user_bp
-from src.routes.auth import auth_bp
-from src.routes.project import project_bp
-from src.routes.credential import credential_bp
-from src.routes.data_source import data_source_bp
-from src.routes.webhook import webhook_bp
+# Import models (they need to be imported after db is defined)
+from user import User
+from project import Project
+from credential import Credential
+from data_source import DataSource
+from extracted_data import ExtractedData
+from webhook import WebhookConfig
 
 def create_app():
     """Application factory pattern"""
-    app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
+    app = Flask(__name__, static_folder='dist')
     
     # Configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(32))
@@ -40,7 +34,11 @@ def create_app():
     database_url = os.getenv('DATABASE_URL')
     if not database_url:
         # Default to SQLite for development
-        database_url = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
+        database_url = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'app.db')}"
+    
+    # Handle Render.com database URL format
+    if database_url and database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -54,8 +52,18 @@ def create_app():
     migrate = Migrate(app, db)
     jwt = JWTManager(app)
     
-    # Configure CORS
-    CORS(app, origins="*", supports_credentials=True)
+    # Configure CORS for deployment
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://localhost:5173", 
+        os.getenv('FRONTEND_URL', '*')
+    ]
+    
+    CORS(app, 
+         origins=allowed_origins,
+         supports_credentials=True,
+         allow_headers=['Content-Type', 'Authorization'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
     
     # JWT error handlers
     @jwt.expired_token_loader
@@ -70,13 +78,12 @@ def create_app():
     def missing_token_callback(error):
         return jsonify({'error': 'Authorization token is required'}), 401
     
-    # Register blueprints
-    app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
-    app.register_blueprint(user_bp, url_prefix='/api/v1/users')
-    app.register_blueprint(project_bp, url_prefix='/api/v1/projects')
-    app.register_blueprint(credential_bp, url_prefix='/api/v1/projects')
-    app.register_blueprint(data_source_bp, url_prefix='/api/v1/projects')
-    app.register_blueprint(webhook_bp, url_prefix='/webhook/v1')
+    # Import and register route blueprints
+    try:
+        from auth import auth_bp
+        app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
+    except ImportError:
+        pass
     
     # Health check endpoint
     @app.route('/api/v1/health')
@@ -84,44 +91,69 @@ def create_app():
         return jsonify({
             'status': 'healthy',
             'version': '1.0.0',
-            'timestamp': datetime.now(timezone.utc).isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'environment': os.getenv('FLASK_ENV', 'production')
+        })
+    
+    # API info endpoint
+    @app.route('/api/v1/info')
+    def api_info():
+        return jsonify({
+            'name': 'Marketing Analytics Data Integration Platform',
+            'version': '1.0.0',
+            'description': 'REST API for marketing data integration and analytics',
+            'endpoints': {
+                'health': '/api/v1/health',
+                'auth': '/api/v1/auth',
+                'users': '/api/v1/users',
+                'projects': '/api/v1/projects',
+                'credentials': '/api/v1/credentials',
+                'data_sources': '/api/v1/data_sources',
+                'webhooks': '/webhook/v1'
+            }
         })
     
     # Create database tables
     with app.app_context():
-        db.create_all()
-        
-        # Create default admin user if it doesn't exist
-        admin_user = User.query.filter_by(email='admin@example.com').first()
-        if not admin_user:
-            admin_user = User(
-                email='admin@example.com',
-                password='admin123',
-                first_name='Admin',
-                last_name='User',
-                role='admin',
-                is_verified=True
-            )
-            db.session.add(admin_user)
-            db.session.commit()
-            print("Created default admin user: admin@example.com / admin123")
+        try:
+            db.create_all()
+            
+            # Create default admin user if it doesn't exist
+            admin_user = User.query.filter_by(email='admin@marketingplatform.com').first()
+            if not admin_user:
+                admin_user = User(
+                    email='admin@marketingplatform.com',
+                    first_name='Admin',
+                    last_name='User',
+                    role='admin',
+                    is_verified=True
+                )
+                admin_user.set_password('admin123')
+                db.session.add(admin_user)
+                db.session.commit()
+                print("Created default admin user: admin@marketingplatform.com / admin123")
+        except Exception as e:
+            print(f"Database initialization error: {e}")
     
-    # Frontend serving routes
+    # Frontend serving routes (for development/single deployment)
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
-    def serve(path):
-        static_folder_path = app.static_folder
-        if static_folder_path is None:
-            return "Static folder not configured", 404
-
-        if path != "" and os.path.exists(os.path.join(static_folder_path, path)):
-            return send_from_directory(static_folder_path, path)
-        else:
-            index_path = os.path.join(static_folder_path, 'index.html')
-            if os.path.exists(index_path):
-                return send_from_directory(static_folder_path, 'index.html')
+    def serve_frontend(path):
+        if app.static_folder and os.path.exists(app.static_folder):
+            if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+                return send_from_directory(app.static_folder, path)
             else:
-                return jsonify({'message': 'Marketing Analytics Platform API', 'version': '1.0.0'}), 200
+                index_path = os.path.join(app.static_folder, 'index.html')
+                if os.path.exists(index_path):
+                    return send_from_directory(app.static_folder, 'index.html')
+        
+        # API-only response when no frontend is available
+        return jsonify({
+            'message': 'Marketing Analytics Platform API',
+            'version': '1.0.0',
+            'status': 'running',
+            'docs': '/api/v1/info'
+        }), 200
     
     return app
 
@@ -129,6 +161,12 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    from datetime import datetime, timezone
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.getenv('PORT', 5000))
+    debug_mode = os.getenv('FLASK_ENV') == 'development'
+    
+    app.run(
+        host='0.0.0.0', 
+        port=port, 
+        debug=debug_mode
+    )
 
